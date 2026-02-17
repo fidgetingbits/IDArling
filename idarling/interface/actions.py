@@ -22,9 +22,9 @@ import ida_idaapi
 import ida_kernwin
 import ida_loader
 
-from PyQt5.QtCore import QCoreApplication, QFileInfo, Qt  # noqa: I202
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMessageBox, QProgressDialog
+from PySide6.QtCore import QCoreApplication, QFileInfo, Qt  # noqa: I202
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QMessageBox, QProgressDialog
 
 from .dialogs import OpenDialog, SaveDialog
 from ..shared.commands import DownloadFile, UpdateFile
@@ -207,7 +207,7 @@ class OpenActionHandler(ActionHandler):
         # Get the absolute path of the file
         app_path = QCoreApplication.applicationFilePath()
         app_name = QFileInfo(app_path).fileName()
-        file_ext = "i64" if "64" in app_name else "idb"
+        file_ext = "i64"
         file_name = "%s_%s_%s.%s" % (project.name, snapshot.binary, snapshot.name, file_ext)
         file_path = os.path.join(self._plugin.config["files_dir"], file_name)
 
@@ -251,7 +251,7 @@ class OpenActionHandler(ActionHandler):
 
         # Create a temporary copy of the new database because we cannot use
         # the snapshot functionality to restore the currently opened database
-        file_ext = ".i64" if "64" in app_name else ".idb"
+        file_ext = ".i64"
         tmp_file, tmp_path = tempfile.mkstemp(suffix=file_ext)
         shutil.copyfile(file_path, tmp_path)
 

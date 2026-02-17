@@ -12,8 +12,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 import time
 
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import qApp, QMainWindow
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QApplication, QMainWindow
 
 from .actions import OpenAction, SaveAction
 from .filter import EventFilter
@@ -37,7 +37,8 @@ class Interface(Module):
 
         # Find the QMainWindow instance
         self._plugin.logger.debug("Searching for the main window")
-        for widget in qApp.topLevelWidgets():
+        app = QApplication.instance()
+        for widget in app.topLevelWidgets():
             if isinstance(widget, QMainWindow):
                 self._window = widget
                 break

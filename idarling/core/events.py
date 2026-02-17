@@ -15,7 +15,6 @@ import pickle
 import sys
 
 import ida_bytes
-import ida_enum
 import ida_funcs
 import ida_hexrays
 import ida_idaapi
@@ -28,7 +27,6 @@ import ida_pro
 import ida_range
 import ida_segment
 import ida_segregs
-import ida_struct
 import ida_typeinf
 import ida_ua
 import ida_idc
@@ -115,7 +113,7 @@ class MakeDataEvent(Event):
         self.sname = sname
 
     def __call__(self):
-        ida_bytes.create_data(self.ea, ida_bytes.calc_dflags(self.flags, True), self.size, ida_struct.get_struc_id(self.sname) if self.sname else ida_netnode.BADNODE)
+        ida_bytes.create_data(self.ea, ida_bytes.calc_dflags(self.flags, True), self.size, idc.get_struc_id(self.sname) if self.sname else ida_netnode.BADNODE)
 
 
 class RenamedEvent(Event):
@@ -133,8 +131,13 @@ class RenamedEvent(Event):
             self.ea, self.new_name, flags | ida_name.SN_NOWARN
         )
         ida_kernwin.request_refresh(ida_kernwin.IWID_DISASMS)
-        ida_kernwin.request_refresh(ida_kernwin.IWID_STRUCTS)
         ida_kernwin.request_refresh(ida_kernwin.IWID_STKVIEW)
+
+        if hasattr(ida_kernwin, "IWID_STRUCTS"):
+            ida_kernwin.request_refresh(ida_kernwin.IWID_STRUCTS)
+        else:
+            ida_kernwin.refresh_idaview_anyway()
+
         HexRaysEvent.refresh_pseudocode_view(self.ea)
 
 
@@ -295,7 +298,7 @@ class TiChangedEvent(Event):
             py_type = py_type[1:]
         if len(py_type) >= 2:
             if self.name:
-                r = ida_struct.get_member_by_fullname(self.name)
+                r = idc.get_member_by_fullname(self.name)
                 if r:
                     self.ea = r[0].id
             ida_typeinf.apply_type(
@@ -404,14 +407,14 @@ class OpTypeChangedEvent(Event):
         if self.op == "offset":
             ida_offset.op_plain_offset(self.ea, self.n, 0)
         if self.op == "enum":
-            id = ida_enum.get_enum(self.extra["ename"])
+            id = idc.get_enum(self.extra["ename"])
             ida_bytes.op_enum(self.ea, self.n, id, self.extra["serial"])
         if self.op == "struct":
             path_len = len(self.extra["spath"])
             path = ida_pro.tid_array(path_len)
             for i in range(path_len):
                 sname = self.extra["spath"][i]
-                path[i] = ida_struct.get_struc_id(sname)
+                path[i] = idc.get_struc_id(sname)
             insn = ida_ua.insn_t()
             ida_ua.decode_insn(insn, self.ea)
             ida_bytes.op_stroff(
@@ -433,7 +436,7 @@ class EnumCreatedEvent(Event):
         self.name = name
 
     def __call__(self):
-        ida_enum.add_enum(self.enum, self.name, 0)
+        idc.add_enum(self.enum, self.name, 0)
 
 
 class EnumDeletedEvent(Event):
@@ -444,7 +447,7 @@ class EnumDeletedEvent(Event):
         self.ename = ename
 
     def __call__(self):
-        ida_enum.del_enum(ida_enum.get_enum(self.ename))
+        idc.del_enum(idc.get_enum(self.ename))
 
 
 class EnumRenamedEvent(Event):
@@ -458,11 +461,11 @@ class EnumRenamedEvent(Event):
 
     def __call__(self):
         if self.is_enum:
-            enum = ida_enum.get_enum(self.oldname)
-            ida_enum.set_enum_name(enum, self.newname)
+            enum = idc.get_enum(self.oldname)
+            idc.set_enum_name(enum, self.newname)
         else:
-            emem = ida_enum.get_enum_member_by_name(self.oldname)
-            ida_enum.set_enum_member_name(emem, self.newname)
+            emem = idc.get_enum_member_by_name(self.oldname)
+            idc.set_enum_member_name(emem, self.newname)
 
 
 class EnumBfChangedEvent(Event):
@@ -474,8 +477,8 @@ class EnumBfChangedEvent(Event):
         self.bf_flag = bf_flag
 
     def __call__(self):
-        enum = ida_enum.get_enum(self.ename)
-        ida_enum.set_enum_bf(enum, self.bf_flag)
+        enum = idc.get_enum(self.ename)
+        idc.set_enum_bf(enum, self.bf_flag)
 
 
 class EnumCmtChangedEvent(Event):
@@ -488,9 +491,9 @@ class EnumCmtChangedEvent(Event):
         self.repeatable_cmt = repeatable_cmt
 
     def __call__(self):
-        emem = ida_enum.get_enum_member_by_name(self.emname)
+        emem = idc.get_enum_member_by_name(self.emname)
         cmt = self.cmt if self.cmt else ""
-        ida_enum.set_enum_cmt(emem, cmt, self.repeatable_cmt)
+        idc.set_enum_cmt(emem, cmt, self.repeatable_cmt)
 
 
 class EnumMemberCreatedEvent(Event):
@@ -504,8 +507,8 @@ class EnumMemberCreatedEvent(Event):
         self.bmask = bmask
 
     def __call__(self):
-        enum = ida_enum.get_enum(self.ename)
-        ida_enum.add_enum_member(
+        enum = idc.get_enum(self.ename)
+        idc.add_enum_member(
             enum, self.name, self.value, self.bmask
         )
 
@@ -521,8 +524,8 @@ class EnumMemberDeletedEvent(Event):
         self.bmask = bmask
 
     def __call__(self):
-        enum = ida_enum.get_enum(self.ename)
-        ida_enum.del_enum_member(enum, self.value, self.serial, self.bmask)
+        enum = idc.get_enum(self.ename)
+        idc.del_enum_member(enum, self.value, self.serial, self.bmask)
 
 
 class StrucCreatedEvent(Event):
@@ -535,7 +538,7 @@ class StrucCreatedEvent(Event):
         self.is_union = is_union
 
     def __call__(self):
-        ida_struct.add_struc(
+        idc.add_struc(
             ida_idaapi.BADADDR, self.name, self.is_union
         )
 
@@ -548,8 +551,8 @@ class StrucDeletedEvent(Event):
         self.sname = sname
 
     def __call__(self):
-        struc = ida_struct.get_struc_id(self.sname)
-        ida_struct.del_struc(ida_struct.get_struc(struc))
+        struc = idc.get_struc_id(self.sname)
+        idc.del_struc(idc.get_struc(struc))
 
 
 class StrucRenamedEvent(Event):
@@ -561,8 +564,8 @@ class StrucRenamedEvent(Event):
         self.newname = newname
 
     def __call__(self):
-        struc = ida_struct.get_struc_id(self.oldname)
-        ida_struct.set_struc_name(struc, self.newname)
+        struc = idc.get_struc_id(self.oldname)
+        idc.set_struc_name(struc, self.newname)
 
 
 class StrucCmtChangedEvent(Event):
@@ -576,16 +579,16 @@ class StrucCmtChangedEvent(Event):
         self.repeatable_cmt = repeatable_cmt
 
     def __call__(self):
-        struc = ida_struct.get_struc_id(self.sname)
-        sptr = ida_struct.get_struc(struc)
+        struc = idc.get_struc_id(self.sname)
+        sptr = idc.get_struc(struc)
         cmt = self.cmt if self.cmt else ""
         if self.smname:
-            mptr = ida_struct.get_member_by_name(
+            mptr = idc.get_member_by_name(
                 sptr, self.smname
             )
-            ida_struct.set_member_cmt(mptr, cmt, self.repeatable_cmt)
+            idc.set_member_cmt(mptr, cmt, self.repeatable_cmt)
         else:
-            ida_struct.set_struc_cmt(sptr.id, cmt, self.repeatable_cmt)
+            idc.set_struc_cmt(sptr.id, cmt, self.repeatable_cmt)
 
 
 class StrucMemberEvent(Event):
@@ -594,14 +597,14 @@ class StrucMemberEvent(Event):
     """
     @staticmethod
     def _get_sptr(struct_name):
-        struc_id = ida_struct.get_struc_id(struct_name)
-        return ida_struct.get_struc(struc_id)
+        struc_id = idc.get_struc_id(struct_name)
+        return idc.get_struc(struc_id)
 
     @staticmethod
     def _get_member_type(type_flag, extra):
         mt = ida_nalt.opinfo_t()
         if ida_bytes.is_struct(type_flag):
-            mt.tid = ida_struct.get_struc_id(extra['struc_name'])
+            mt.tid = idc.get_struc_id(extra['struc_name'])
         if type_flag & ida_bytes.off_flag():
             mt.ri = ida_nalt.refinfo_t()
             mt.ri.init(
@@ -635,7 +638,7 @@ class StrucMemberCreatedEvent(StrucMemberEvent):
     def __call__(self):
         sptr = self._get_sptr(self.sname)
         mt = self._get_member_type(self.flag, self.extra)
-        ida_struct.add_struc_member(
+        idc.add_struc_member(
             sptr,
             self.fieldname,
             self.offset,
@@ -659,7 +662,7 @@ class StrucMemberChangedEvent(StrucMemberEvent):
     def __call__(self):
         sptr = self._get_sptr(self.sname)
         mt = self._get_member_type(self.flag, self.extra)
-        ida_struct.set_member_type(
+        idc.set_member_type(
             sptr, self.soff, self.flag, mt, self.eoff - self.soff
         )
 
@@ -674,7 +677,7 @@ class StrucMemberDeletedEvent(StrucMemberEvent):
 
     def __call__(self):
         sptr = self._get_sptr(self.sname)
-        ida_struct.del_struc_member(sptr, self.offset)
+        idc.del_struc_member(sptr, self.offset)
 
 
 class StrucMemberRenamedEvent(StrucMemberEvent):
@@ -688,7 +691,7 @@ class StrucMemberRenamedEvent(StrucMemberEvent):
 
     def __call__(self):
         sptr = self._get_sptr(self.sname)
-        ida_struct.set_member_name(
+        idc.set_member_name(
             sptr, self.offset, self.newname
         )
 
@@ -703,9 +706,9 @@ class ExpandingStrucEvent(Event):
         self.delta = delta
 
     def __call__(self):
-        struc = ida_struct.get_struc_id(self.sname)
-        sptr = ida_struct.get_struc(struc)
-        ida_struct.expand_struc(sptr, self.offset, self.delta)
+        struc = idc.get_struc_id(self.sname)
+        sptr = idc.get_struc(struc)
+        idc.expand_struc(sptr, self.offset, self.delta)
 
 
 class SegmAddedEvent(Event):

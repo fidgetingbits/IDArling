@@ -21,7 +21,7 @@ import ida_kernwin
 import ida_netnode
 import ida_typeinf
 
-from PyQt5.QtCore import QCoreApplication, QFileInfo  # noqa: I202
+from PySide6.QtCore import QCoreApplication, QFileInfo  # noqa: I202
 
 from .hooks import HexRaysHooks, IDBHooks, IDPHooks, UIHooks
 from ..module import Module
@@ -121,7 +121,7 @@ class Core(Module):
         self.save_netnode()
 
     def update_local_types_map(self):
-        for i in range(1, ida_typeinf.get_ordinal_qty(ida_typeinf.get_idati())):
+        for i in range(1, ida_typeinf.get_ordinal_count(ida_typeinf.get_idati())):
             t = ImportLocalType(i)
             self.local_type_map[i] = t
 

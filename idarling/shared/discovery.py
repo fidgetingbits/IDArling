@@ -13,8 +13,9 @@
 import platform
 import socket
 import time
+import errno
 
-from PyQt5.QtCore import QObject, QSocketNotifier, QTimer
+from PySide6.QtCore import QObject, QSocketNotifier, QTimer
 
 
 DISCOVERY_REQUEST = "IDARLING_DISCOVERY_REQUEST"
@@ -92,10 +93,15 @@ class ClientsDiscovery(QObject):
                 )
                 request = request[sent:]
             except socket.error as e:
-                self._logger.warning("Couldn't send discovery request: {}".format(e))
+                # Some systems may not be able to broadcast on all interfaces
+                # ("No route to host" / network unreachable). Don't spam
+                # warnings for those expected transient errors.
+                err_no = getattr(e, "errno", None)
+                if err_no in (errno.EHOSTUNREACH, errno.ENETUNREACH):
+                    self._logger.debug("Couldn't send discovery request (network unreachable): {}".format(e))
+                else:
+                    self._logger.warning("Couldn't send discovery request: {}".format(e))
                 # Force return, otherwise the while loop will halt IDA
-                # This is a temporary fix, and it's gonna yield the above
-                # warning every every n seconds..
                 return
 
     def _notify_read(self):

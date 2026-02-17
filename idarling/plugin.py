@@ -28,7 +28,7 @@ from .shared.utils import start_logging
 
 
 
-class Plugin(ida_idaapi.plugin_t):
+class IdarlingPlugin(ida_idaapi.plugin_t):
     """
     This is the main class of the plugin. It subclasses plugin_t as required
     by IDA. It holds the modules of plugin, which themselves provides the
@@ -51,7 +51,7 @@ class Plugin(ida_idaapi.plugin_t):
     @staticmethod
     def description():
         """Return the description displayed in the console."""
-        return "{} v{}".format(Plugin.PLUGIN_NAME, Plugin.PLUGIN_VERSION)
+        return "{} v{}".format(IdarlingPlugin.PLUGIN_NAME, IdarlingPlugin.PLUGIN_VERSION)
 
     @staticmethod
     def plugin_resource(filename):
@@ -87,7 +87,7 @@ class Plugin(ida_idaapi.plugin_t):
         """
         r, g, b = colorsys.hls_to_rgb(random.random(), 0.5, 1.0)
         color = int(b * 255) << 16 | int(g * 255) << 8 | int(r * 255)
-        file_path = Plugin.user_resource("files", "")
+        file_path = IdarlingPlugin.user_resource("files", "")
         return {
             "level": logging.INFO,
             "servers": [],
@@ -107,7 +107,7 @@ class Plugin(ida_idaapi.plugin_t):
         # Then setup the default logger
         log_path = self.user_resource("logs", "idarling.%s.log" % os.getpid())
         level = self.config["level"]
-        self._logger = start_logging(log_path, "IDArling.Plugin", level)
+        self._logger = start_logging(log_path, "IDArling.IdarlingPlugin", level)
 
         self._core = Core(self)
         self._interface = Interface(self)

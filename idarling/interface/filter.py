@@ -13,11 +13,10 @@
 import ida_funcs
 import ida_kernwin
 
-from PyQt5.QtCore import QEvent, QObject, Qt  # noqa: I202
-from PyQt5.QtGui import QContextMenuEvent, QIcon, QImage, QPixmap, QShowEvent
-from PyQt5.QtWidgets import (
-    QAction,
-    qApp,
+from PySide6.QtCore import QEvent, QObject, Qt  # noqa: I202
+from PySide6.QtGui import QAction, QContextMenuEvent, QIcon, QImage, QPixmap, QShowEvent
+from PySide6.QtWidgets import (
+    QApplication,
     QDialog,
     QGroupBox,
     QLabel,
@@ -25,6 +24,7 @@ from PyQt5.QtWidgets import (
     QTableView,
     QWidget,
 )
+
 
 from .widget import StatusWidget
 from ..shared.commands import InviteToLocation
@@ -43,11 +43,11 @@ class EventFilter(QObject):
 
     def install(self):
         self._plugin.logger.debug("Installing the event filter")
-        qApp.instance().installEventFilter(self)
+        QApplication.instance().installEventFilter(self)
 
     def uninstall(self):
         self._plugin.logger.debug("Uninstalling the event filter")
-        qApp.instance().removeEventFilter(self)
+        QApplication.instance().removeEventFilter(self)
 
     def _replace_icon(self, label):
         pixmap = QPixmap(self._plugin.plugin_resource("idarling.png"))

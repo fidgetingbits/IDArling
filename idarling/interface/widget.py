@@ -14,9 +14,9 @@ import colorsys
 from functools import partial, lru_cache
 import time
 
-from PyQt5.QtCore import QPoint, QRect, QSize, Qt, QTimer
-from PyQt5.QtGui import QIcon, QImage, QPainter, QPixmap, QRegion
-from PyQt5.QtWidgets import QAction, QActionGroup, QLabel, QMenu, QWidget
+from PySide6.QtCore import QPoint, QRect, QSize, Qt, QTimer
+from PySide6.QtGui import QAction, QActionGroup, QIcon, QImage, QPainter, QPixmap, QRegion
+from PySide6.QtWidgets import QLabel, QMenu, QWidget
 
 from .dialogs import SettingsDialog
 

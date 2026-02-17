@@ -16,7 +16,7 @@ import signal
 import sys
 import traceback
 
-from PyQt5.QtCore import QCoreApplication, QTimer
+from PySide6.QtCore import QCoreApplication, QTimer
 
 from .shared.server import Server
 from .shared.utils import start_logging
@@ -25,7 +25,7 @@ from .shared.utils import start_logging
 class DedicatedServer(Server):
     """
     This is the dedicated/standalone server. It can be invoked from the command line. It
-    requires only PyQt5 and should be invoked from Python 3. The dedicated
+    requires only PySide6 and should be invoked from Python 3. The dedicated
     server should be used when the integrated doesn't fulfil the user's needs.
     """
 

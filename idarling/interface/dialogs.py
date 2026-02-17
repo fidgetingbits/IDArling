@@ -20,9 +20,9 @@ import ida_loader
 import ida_nalt
 import idc
 
-from PyQt5.QtCore import QRegExp, Qt, QDir  # noqa: I202
-from PyQt5.QtGui import QIcon, QRegExpValidator
-from PyQt5.QtWidgets import (
+from PySide6.QtCore import QRegularExpression, Qt, QDir  # noqa: I202
+from PySide6.QtGui import QIcon, QRegularExpressionValidator
+from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
     QComboBox,
@@ -43,6 +43,14 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget, QSizePolicy, QFileDialog,
 )
+
+# QHeaderView enum compatibility between PyQt5 and PySide6
+try:
+    _HV_Stretch = QHeaderView.ResizeMode.Stretch
+    _HV_ResizeToContents = QHeaderView.ResizeMode.ResizeToContents
+except AttributeError:
+    _HV_Stretch = QHeaderView.Stretch
+    _HV_ResizeToContents = QHeaderView.ResizeToContents
 
 from ..shared.commands import (
     CreateProject,
@@ -164,7 +172,7 @@ class OpenDialog(QDialog):
         self._snapshots_table.setHorizontalHeaderLabels(labels)
         horizontal_header = self._snapshots_table.horizontalHeader()
         horizontal_header.setSectionsClickable(False)
-        horizontal_header.setSectionResizeMode(0, horizontal_header.Stretch)
+        horizontal_header.setSectionResizeMode(0, _HV_Stretch)
         self._snapshots_table.verticalHeader().setVisible(False)
         self._snapshots_table.setSelectionBehavior(QTableWidget.SelectRows)
         self._snapshots_table.setSelectionMode(QTableWidget.SingleSelection)
@@ -685,7 +693,7 @@ class CreateProjectDialog(QDialog):
         self._nameLabel = QLabel("<b>Project Name</b>")
         layout.addWidget(self._nameLabel)
         self._nameEdit = QLineEdit()
-        self._nameEdit.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]+")))
+        self._nameEdit.setValidator(QRegularExpressionValidator(QRegularExpression("[a-zA-Z0-9-]+")))
         layout.addWidget(self._nameEdit)
 
         buttons = QWidget(self)
@@ -897,9 +905,9 @@ class SettingsDialog(QDialog):
                     "Auto"))
         horizontal_header = self._servers_table.horizontalHeader()
         horizontal_header.setSectionsClickable(False)
-        horizontal_header.setSectionResizeMode(0, QHeaderView.Stretch)
-        horizontal_header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        horizontal_header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        horizontal_header.setSectionResizeMode(0, _HV_Stretch)
+        horizontal_header.setSectionResizeMode(1, _HV_ResizeToContents)
+        horizontal_header.setSectionResizeMode(2, _HV_ResizeToContents)
         self._servers_table.verticalHeader().setVisible(False)
         self._servers_table.setSelectionBehavior(QTableWidget.SelectRows)
         self._servers_table.setSelectionMode(QTableWidget.SingleSelection)

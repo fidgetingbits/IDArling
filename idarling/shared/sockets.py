@@ -18,7 +18,7 @@ import socket
 import ssl
 import sys
 
-from PyQt5.QtCore import QCoreApplication, QEvent, QObject, QSocketNotifier
+from PySide6.QtCore import QCoreApplication, QEvent, QObject, QSocketNotifier
 
 from .packets import Container, Packet, PacketDeferred, Query, Reply
 from ..shared.commands import (
@@ -86,7 +86,7 @@ class ClientSocket(QObject):
 
         self._socket = sock
 
-    def disconnect(self, err=None):
+    def close_connection(self, err=None):
         """Terminates the current connection."""
         if not self._socket:
             return
@@ -151,7 +151,7 @@ class ClientSocket(QObject):
         ret = self._socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
         if ret != 0:
             if ret != errno.EINPROGRESS and ret != errno.EWOULDBLOCK:
-                self.disconnect(socket.error(ret, os.strerror(ret)))
+                self.close_connection(socket.error(ret, os.strerror(ret)))
             return False
         else:
             self._connected = True
@@ -167,7 +167,7 @@ class ClientSocket(QObject):
         try:
             data = self._socket.recv(ClientSocket.MAX_DATA_SIZE)
             if not data:
-                self.disconnect()
+                self.close_connection()
                 return
         except socket.error as e:
             if (
@@ -175,7 +175,7 @@ class ClientSocket(QObject):
                 and not isinstance(e, ssl.SSLWantReadError)
                 and not isinstance(e, ssl.SSLWantWriteError)
             ):
-                self.disconnect(e)
+                self.close_connection(e)
             return  # No more data available
         self._read_buffer.extend(data)
 
@@ -191,10 +191,22 @@ class ClientSocket(QObject):
 
                     # Try to parse the line (= packet)
                     try:
-                        dct = json.loads(line.decode("utf-8"))
-                        self._read_packet = Packet.parse_packet(
-                            dct, self._server
-                        )
+                        try:
+                            decoded = line.decode("utf-8")
+                        except UnicodeDecodeError as e:
+                            # Received binary data (for example an SSL/TLS
+                            # handshake) on a plaintext socket. Close the
+                            # connection to avoid trying to parse arbitrary
+                            # binary data as JSON.
+                            self._logger.warning(
+                                "Invalid (non-UTF8) packet received: %s", line
+                            )
+                            self._logger.debug("Closing connection")
+                            self.close_connection()
+                            return
+
+                        dct = json.loads(decoded)
+                        self._read_packet = Packet.parse_packet(dct, self._server)
                     except Exception as e:
                         msg = "Invalid packet received: %s" % line
                         self._logger.warning(msg)
@@ -267,7 +279,7 @@ class ClientSocket(QObject):
                 and not isinstance(e, ssl.SSLWantReadError)
                 and not isinstance(e, ssl.SSLWantWriteError)
             ):
-                self.disconnect(e)
+                self.close_connection(e)
             return  # Can't write anything
 
         # Trigger the upback
@@ -356,7 +368,7 @@ class ServerSocket(QObject):
         """Is the underlying socket connected?"""
         return self._connected
 
-    def connect(self, sock):
+    def set_socket(self, sock):
         """Sets the underlying socket to utilize."""
         self._accept_notifier = QSocketNotifier(
             sock.fileno(), QSocketNotifier.Read, self
@@ -367,7 +379,7 @@ class ServerSocket(QObject):
         self._socket = sock
         self._connected = True
 
-    def disconnect(self, err=None):
+    def close_listener(self, err=None):
         """Terminates the current connection."""
         if not self._socket:
             return
@@ -390,7 +402,7 @@ class ServerSocket(QObject):
             except socket.error as e:
                 if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
                     break
-                self.disconnect(e)
+                self.close_listener(e)
                 break
             self._accept(sock)
 

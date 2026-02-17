@@ -15,17 +15,16 @@ import pickle
 
 import ida_auto
 import ida_bytes
-import ida_enum
 import ida_funcs
 import ida_hexrays
 import ida_idaapi
 import ida_idp
 import ida_kernwin
 import ida_nalt
+import idc
 import ida_netnode
 import ida_pro
 import ida_segment
-import ida_struct
 import ida_typeinf
 
 fDebug = False
@@ -77,9 +76,9 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
     def local_types_changed(self):
         changed_types = []
         # self._plugin.logger.trace(self._plugin.core.local_type_map)
-        for i in range(1, ida_typeinf.get_ordinal_qty(ida_typeinf.get_idati())):
+        for i in range(1, ida_typeinf.get_ordinal_count(ida_typeinf.get_idati())):
             t = ImportLocalType(i)
-            if t and t.name and ida_struct.get_struc_id(t.name) == ida_idaapi.BADADDR and ida_enum.get_enum(t.name) == ida_idaapi.BADADDR:
+            if t and t.name and idc.get_struc_id(t.name) == ida_idaapi.BADADDR and idc.get_enum(t.name) == ida_idaapi.BADADDR:
                 if i in self._plugin.core.local_type_map:
                     t_old = self._plugin.core.local_type_map[i]
                     if t_old and not t.isEqual(t_old):
@@ -170,8 +169,8 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
     def ti_changed(self, ea, type, fname):
         self._plugin.logger.debug("ti_changed(ea = 0x%X, type = %s, fname = %s)" % (ea, type, fname))
         name = ""
-        if ida_struct.is_member_id(ea):
-            name = ida_struct.get_struc_name(ea)
+        if idc.is_member_id(ea):
+            name = idc.get_struc_name(ea)
         type = ida_typeinf.idc_get_type_raw(ea)
         self._send_packet(evt.TiChangedEvent(ea, (ParseTypeString(type[0]) if type else [], type[1] if type else None), name))
         return 0
@@ -184,7 +183,7 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
         self._plugin.logger.debug("op_type_changed(ea = %x, n = %d)" % (ea,n))
         def gather_enum_info(ea, n):
             id = ida_bytes.get_enum_id(ea, n)[0]
-            serial = ida_enum.get_enum_idx(id)
+            serial = idc.get_enum_idx(id)
             return id, serial
 
         extra = {}
@@ -209,7 +208,7 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
         elif is_flag(ida_bytes.enum_flag()):
             op = "enum"
             id, serial = gather_enum_info(ea, n)
-            ename = ida_enum.get_enum_name(id)
+            ename = idc.get_enum_name(id)
             extra["ename"] = Event.decode(ename)
             extra["serial"] = serial
         elif flags & ida_bytes.stroff_flag():
@@ -221,7 +220,7 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
             )
             spath = []
             for i in range(path_len):
-                sname = ida_struct.get_struc_name(path[i])
+                sname = idc.get_struc_name(path[i])
                 spath.append(Event.decode(sname))
             extra["delta"] = delta.value()
             extra["spath"] = spath
@@ -236,41 +235,41 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
         return 0
 
     def enum_created(self, enum):
-        name = ida_enum.get_enum_name(enum)
+        name = idc.get_enum_name(enum)
         self._send_packet(evt.EnumCreatedEvent(enum, name))
         return 0
 
     # XXX - use enum_deleted(self, id) instead?
     def deleting_enum(self, id):
-        self._send_packet(evt.EnumDeletedEvent(ida_enum.get_enum_name(id)))
+        self._send_packet(evt.EnumDeletedEvent(idc.get_enum_name(id)))
         return 0
 
     # XXX - use enum_renamed(self, id) instead?
     def renaming_enum(self, id, is_enum, newname):
         if is_enum:
-            oldname = ida_enum.get_enum_name(id)
+            oldname = idc.get_enum_name(id)
         else:
-            oldname = ida_enum.get_enum_member_name(id)
+            oldname = idc.get_enum_member_name(id)
         self._send_packet(evt.EnumRenamedEvent(oldname, newname, is_enum))
         return 0
 
     def enum_bf_changed(self, id):
-        bf_flag = 1 if ida_enum.is_bf(id) else 0
-        ename = ida_enum.get_enum_name(id)
+        bf_flag = 1 if idc.is_bf(id) else 0
+        ename = idc.get_enum_name(id)
         self._send_packet(evt.EnumBfChangedEvent(ename, bf_flag))
         return 0
 
     def enum_cmt_changed(self, tid, repeatable_cmt):
-        cmt = ida_enum.get_enum_cmt(tid, repeatable_cmt)
-        emname = ida_enum.get_enum_name(tid)
+        cmt = idc.get_enum_cmt(tid, repeatable_cmt)
+        emname = idc.get_enum_name(tid)
         self._send_packet(evt.EnumCmtChangedEvent(emname, cmt, repeatable_cmt))
         return 0
 
     def enum_member_created(self, id, cid):
-        ename = ida_enum.get_enum_name(id)
-        name = ida_enum.get_enum_member_name(cid)
-        value = ida_enum.get_enum_member_value(cid)
-        bmask = ida_enum.get_enum_member_bmask(cid)
+        ename = idc.get_enum_name(id)
+        name = idc.get_enum_member_name(cid)
+        value = idc.get_enum_member_value(cid)
+        bmask = idc.get_enum_member_bmask(cid)
         self._send_packet(
             evt.EnumMemberCreatedEvent(ename, name, value, bmask)
         )
@@ -278,24 +277,24 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
 
     # XXX - use enum_member_deleted(self, id, cid) instead?
     def deleting_enum_member(self, id, cid):
-        ename = ida_enum.get_enum_name(id)
-        value = ida_enum.get_enum_member_value(cid)
-        serial = ida_enum.get_enum_member_serial(cid)
-        bmask = ida_enum.get_enum_member_bmask(cid)
+        ename = idc.get_enum_name(id)
+        value = idc.get_enum_member_value(cid)
+        serial = idc.get_enum_member_serial(cid)
+        bmask = idc.get_enum_member_bmask(cid)
         self._send_packet(
             evt.EnumMemberDeletedEvent(ename, value, serial, bmask)
         )
         return 0
 
     def struc_created(self, tid):
-        name = ida_struct.get_struc_name(tid)
-        is_union = ida_struct.is_union(tid)
+        name = idc.get_struc_name(tid)
+        is_union = idc.is_union(tid)
         self._send_packet(evt.StrucCreatedEvent(tid, name, is_union))
         return 0
 
     # XXX - use struc_deleted(self, struc_id) instead?
     def deleting_struc(self, sptr):
-        sname = ida_struct.get_struc_name(sptr.id)
+        sname = idc.get_struc_name(sptr.id)
         self._send_packet(evt.StrucDeletedEvent(sname))
         return 0
 
@@ -310,19 +309,19 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
 
     # XXX - use struc_expanded(self, sptr) instead 
     def expanding_struc(self, sptr, offset, delta):
-        sname = ida_struct.get_struc_name(sptr.id)
+        sname = idc.get_struc_name(sptr.id)
         self._send_packet(evt.ExpandingStrucEvent(sname, offset, delta))
         return 0
 
     def struc_member_created(self, sptr, mptr):
         extra = {}
-        sname = ida_struct.get_struc_name(sptr.id)
-        fieldname = ida_struct.get_member_name(mptr.id)
+        sname = idc.get_struc_name(sptr.id)
+        fieldname = idc.get_member_name(mptr.id)
         offset = 0 if mptr.unimem() else mptr.soff
         flag = mptr.flag
         nbytes = mptr.eoff if mptr.unimem() else mptr.eoff - mptr.soff
         mt = ida_nalt.opinfo_t()
-        is_not_data = ida_struct.retrieve_member_info(mt, mptr)
+        is_not_data = idc.retrieve_member_info(mt, mptr)
         if is_not_data:
             if flag & ida_bytes.off_flag():
                 extra["target"] = mt.ri.target
@@ -343,7 +342,7 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
                     )
                 )
             elif flag & ida_bytes.stru_flag():
-                extra["struc_name"] = ida_struct.get_struc_name(mt.tid)
+                extra["struc_name"] = idc.get_struc_name(mt.tid)
                 if flag & ida_bytes.strlit_flag():
                     extra["strtype"] = mt.strtype
                 self._send_packet(
@@ -360,13 +359,13 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
         return 0
 
     def struc_member_deleted(self, sptr, off1, off2):
-        sname = ida_struct.get_struc_name(sptr.id)
+        sname = idc.get_struc_name(sptr.id)
         self._send_packet(evt.StrucMemberDeletedEvent(sname, off2))
         return 0
 
     # XXX - use struc_member_renamed(self, sptr, mptr) instead?
     def renaming_struc_member(self, sptr, mptr, newname):
-        sname = ida_struct.get_struc_name(sptr.id)
+        sname = idc.get_struc_name(sptr.id)
         offset = mptr.soff
         self._send_packet(evt.StrucMemberRenamedEvent(sname, offset, newname))
         return 0
@@ -374,10 +373,10 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
     def struc_member_changed(self, sptr, mptr):
         extra = {}
 
-        sname = ida_struct.get_struc_name(sptr.id)
+        sname = idc.get_struc_name(sptr.id)
         flag = mptr.flag
         mt = ida_nalt.opinfo_t()
-        is_not_data = ida_struct.retrieve_member_info(mt, mptr)
+        is_not_data = idc.retrieve_member_info(mt, mptr)
         if is_not_data:
             if flag & ida_bytes.off_flag():
                 extra["target"] = mt.ri.target
@@ -398,7 +397,7 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
                     )
                 )
             elif flag & ida_bytes.stru_flag():
-                extra["struc_name"] = ida_struct.get_struc_name(mt.tid)
+                extra["struc_name"] = idc.get_struc_name(mt.tid)
                 if flag & ida_bytes.strlit_flag():
                     extra["strtype"] = mt.strtype
                 self._send_packet(
@@ -415,13 +414,13 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
         return 0
 
     def struc_cmt_changed(self, id, repeatable_cmt):
-        fullname = ida_struct.get_struc_name(id)
+        fullname = idc.get_struc_name(id)
         if "." in fullname:
             sname, smname = fullname.split(".", 1)
         else:
             sname = fullname
             smname = ""
-        cmt = ida_struct.get_struc_cmt(id, repeatable_cmt)
+        cmt = idc.get_struc_cmt(id, repeatable_cmt)
         self._send_packet(
             evt.StrucCmtChangedEvent(sname, smname, cmt, repeatable_cmt)
         )
@@ -529,12 +528,14 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
     def make_data(self, ea, flags, tid, size):
         self._plugin.logger.debug("make_data(ea = %x, flags = %x, tid = %x, size = %x)" % (ea, flags, tid, size))
         # Note: MakeDataEvent.sname == '' is convention for BADNODE
-        self._send_packet(evt.MakeDataEvent(ea, flags, size, ida_struct.get_struc_name(tid) if tid != ida_netnode.BADNODE else ''))
+        self._send_packet(evt.MakeDataEvent(ea, flags, size, idc.get_struc_name(tid) if tid != ida_netnode.BADNODE else ''))
         return 0
 
     def renamed(self, ea, new_name, local_name):
         self._plugin.logger.debug("renamed(ea = %x, new_name = %s, local_name = %d)" % (ea, new_name, local_name))
-        if ida_struct.is_member_id(ea) or ida_struct.get_struc(ea) or ida_enum.get_enum_name(ea):
+        # `idc.get_struc` was removed in newer IDA Python APIs; avoid calling it.
+        # We only need to detect member-id or enum rename events here.
+        if idc.is_member_id(ea) or idc.get_enum_name(ea):
             # Drop hook to avoid duplicate since already handled by the following hooks:
             # - renaming_struc_member() -> sends 'StrucMemberRenamedEvent'
             # - renaming_struc() -> sends 'StrucRenamedEvent' 

@@ -10,16 +10,16 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-from PyQt5.QtCore import (
-    pyqtProperty,
+from PySide6.QtCore import (
+    Property,
     QPoint,
     QPropertyAnimation,
     QRect,
     Qt,
     QTimer,
 )
-from PyQt5.QtGui import QBrush, QColor, QPainter
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
+from PySide6.QtGui import QBrush, QColor, QPainter
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
 
 
 class Invite(QWidget):
@@ -186,7 +186,7 @@ class Invite(QWidget):
         self._animation.setEndValue(0.0)
         self._animation.start()
 
-    @pyqtProperty(float)
+    @Property(float)
     def popup_opacity(self):
         return self._popup_opacity
 

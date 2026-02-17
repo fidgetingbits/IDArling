@@ -117,7 +117,7 @@ class Network(Module):
                 raise OSError(err, os.strerror(err), '')
         except OSError as e:
             self._plugin._logger.exception(e)
-            self._client.disconnect()
+            self._client.terminate()
 
     def disconnect(self):
         """Disconnect from the current server."""
@@ -126,7 +126,7 @@ class Network(Module):
             return
 
         self._plugin.logger.info("Disconnecting...")
-        self._client.disconnect()
+        self._client.terminate()
 
     def send_packet(self, packet):
         """Send a packet to the server."""

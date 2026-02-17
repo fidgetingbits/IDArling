@@ -8,10 +8,10 @@ setup(
     description="Collaborative Reverse Engineering plugin for IDA Pro",
     url="https://github.com/IDArlingTeam/IDArling",
     packages=find_packages(),
-    install_requires=["PyQt5; python_version >= '3.0'"],
+    install_requires=["PySide6; python_version >= '3.9'"],
     include_package_data=True,
     entry_points={
-        "idapython_plugins": ["idarling=idarling.plugin:Plugin"],
+        "idapython_plugins": ["idarling=idarling.plugin:IdarlingPlugin"],
         "console_scripts": ["idarling_server=idarling.server:main"],
     },
 )

@@ -10,9 +10,9 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-from idarling.plugin import Plugin
+from idarling.plugin import IdarlingPlugin
 
 
 def PLUGIN_ENTRY():  # noqa: N802
     """Mandatory entry point for IDAPython plugins."""
-    return Plugin()
+    return IdarlingPlugin()

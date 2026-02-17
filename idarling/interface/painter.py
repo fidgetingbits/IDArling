@@ -15,15 +15,15 @@ import sys
 import ida_funcs
 import ida_kernwin
 
-from PyQt5.QtCore import (  # noqa: I202
+from PySide6.QtCore import (  # noqa: I202
     QAbstractItemModel,
     QModelIndex,
     QObject,
     Qt,
 )
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QStyledItemDelegate, QWidget
-import sip
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QStyledItemDelegate, QWidget
+from shiboken6 import wrapInstance
 
 from .widget import StatusWidget
 
@@ -81,7 +81,7 @@ class Painter(QObject):
         self._ida_nav_colorizer = None
         self._nbytes = 0
 
-    # XXX - unused since moved to Python3 in IDA due to errors in PyQt5
+    # XXX - unused since moved to Python3 in IDA due to errors in PySide6
     # "OverflowError: Python int too large to convert to C long"
     # See https://www.hex-rays.com/products/ida/support/idapython_docs/ida_kernwin-module.html#set_nav_colorizer
     def nav_colorizer(self, ea, nbytes):
@@ -138,7 +138,7 @@ class Painter(QObject):
         return None
 
     def widget_visible(self, twidget):
-        widget = sip.wrapinstance(long(twidget), QWidget)
+        widget = wrapInstance(int(twidget), QWidget)
         if widget.windowTitle() != "Functions window":
             return
         table = widget.layout().itemAt(0).widget()

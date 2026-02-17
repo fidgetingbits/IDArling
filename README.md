@@ -95,9 +95,9 @@ import urllib2; exec(urllib2.urlopen('https://raw.githubusercontent.com/fidgetin
 To enable the integrated server, you can choose "Integrated Server" after right-clicking
 the IDArling widget located in the status bar.
 
-The integrated server requires PyQt5, which is integrated into IDA. If you're
+The integrated server requires PySide6, which is integrated into IDA. If you're
 using an external Python installation, we recommand using Python 3, which offers
-a pre-built package that can be installed with a simple `pip install PyQt5`.
+a pre-built package that can be installed with a simple `pip install PySide6`.
 
 ## Connection to server and usage
 

@@ -13,7 +13,7 @@
 import ida_auto
 import ida_kernwin
 
-from PyQt5.QtGui import QImage, QPixmap  # noqa: I202
+from PySide6.QtGui import QImage, QPixmap  # noqa: I202
 
 from ..interface.widget import StatusWidget
 from ..shared.commands import (
@@ -102,8 +102,8 @@ class Client(ClientSocket):
             packet.tick = self._plugin.core.tick
         return ClientSocket.send_packet(self, packet)
 
-    def disconnect(self, err=None):
-        ret = ClientSocket.disconnect(self, err)
+    def terminate(self, err=None):
+        ret = ClientSocket.close_connection(self, err)
         self._plugin.network._client = None
         self._plugin.network._server = None
 
@@ -188,12 +188,12 @@ class Client(ClientSocket):
 
     def _handle_delete_project(self, packet):
         # TODO: Handle situation then user snapshot in deleted project
-        self.disconnect()
+        self.terminate()
 
     def _handle_delete_binary(self, packet):
         # TODO: Handle situation then user snapshot in deleted binary
-        self.disconnect()
+        self.terminate()
 
     def _handle_delete_snapshot(self, packet):
         # TODO: Handle situation then user snapshot deleted
-        self.disconnect()
+        self.terminate()
